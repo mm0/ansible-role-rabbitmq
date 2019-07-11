@@ -1,0 +1,69 @@
+- name: Copy GPG key
+  copy: src=rabbitmq-gpg-key dest=/tmp/rabbitmq-gpg-key 
+
+- name: Add to apt-key
+  apt_key: file=/tmp/rabbitmq-gpg-key
+
+- name: Update apt cache
+  apt: update_cache=yes
+
+- name: Setup rabbitmq repository
+  apt_repository: repo='{{ item }}' state=present update_cache=yes
+  with_items:
+    - deb http://www.rabbitmq.com/debian testing main
+
+- name: Install the rabbitmq server
+  apt: package="{{ item }}" state=present
+  with_items:
+    - rabbitmq-server
+ 
+- name: stop app
+  shell: rabbitmqctl stop_app
+  ignore_errors: true
+
+- name: reset
+  shell: rabbitmqctl reset
+  ignore_errors: true
+
+- name: stop
+  shell: rabbitmqctl stop
+  ignore_errors: true
+
+- name: Stop service
+  service: name=rabbitmq-server state=stopped
+
+- name: kill rabbit
+  shell: pkill -u rabbitmq  && rm -rf /var/lib/rabbitmq/mnesia
+
+- name: Init script
+  template: src=rabbitmq_init.j2 dest=/etc/init.d/rabbitmq-server group=root owner=root mode=0755
+
+- name: Update RabbitMQ conf to rename node
+  template: src=rabbitmq-env.conf.j2 dest=/etc/rabbitmq/rabbitmq-env.conf
+
+- name: Update RabbitMQ config
+  template: src=rabbitmq.config.j2 dest=/etc/rabbitmq/rabbitmq.config
+
+- name: Update RabbitMQ cookie on prod
+  lineinfile: regexp='.*' line="{{ prod_cookie }}" dest=/var/lib/rabbitmq/.erlang.cookie
+  when: env=='prod'
+
+- name: Update RabbitMQ cookie on env
+  lineinfile: regexp='.*' line="{{ dev_cookie }}" dest=/var/lib/rabbitmq/.erlang.cookie
+  when: env!='prod'
+
+- name: Start service and enable on boot
+  service: name=rabbitmq-server state=started enabled=true
+
+- name: Setup federation
+  shell: rabbitmq-plugins enable rabbitmq_federation && rabbitmq-plugins enable rabbitmq_federation_management
+
+- name: Enable shovel
+  shell: rabbitmq-plugins enable rabbitmq_shovel rabbitmq_shovel_management
+
+- name: Setup rabbitmq management web ui
+  shell: rabbitmq-plugins enable rabbitmq_management && rabbitmqctl add_user "{{ prod_user }}" "{{ prod_password }}" && rabbitmqctl set_user_tags tradesy administrator && rabbitmqctl set_permissions -p / tradesy ".*" ".*" ".*"
+  ignore_errors: true
+
+- name: Setup rabbitmq monitoring user
+  shell: rabbitmqctl add_vhost monitoring && rabbitmqctl add_user "{{ monitoring_user }}" "{{ haproxy_monitoring_password }}" && rabbitmqctl set_user_tags {{ monitoring_user }} monitoring && rabbitmqctl set_permissions -p monitoring {{ monitoring_user }} ".*" ".*" ".*"

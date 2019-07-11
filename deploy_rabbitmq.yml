@@ -1,0 +1,49 @@
+# example:  ansible-playbook deploy_rabbitmq.yml -e 'target=test env=qa'
+---
+- hosts: "{{ target }}"
+  gather_facts: true 
+  vars:
+    - env: prod
+    - kernel_vars:
+      - vm.swappiness=0
+      - net.ipv4.tcp_tw_reuse=1
+      - net.ipv4.tcp_slow_start_after_idle = 0
+      - net.ipv4.tcp_max_syn_backlog = 8096
+      - net.ipv4.tcp_fin_timeout = 10
+      - net.ipv4.tcp_rmem = 4096 12582912 16777216
+      - net.ipv4.tcp_wmem = 4096 12582912 16777216
+      - net.core.wmem_max = 16777216
+      - net.core.rmem_max = 16777216
+      - net.core.netdev_max_backlog = 5000
+      - net.core.somaxconn = 65536
+      - vm.max_map_count=262144
+      - net.netfilter.nf_conntrack_max = 2621440
+  sudo: true
+  pre_tasks:
+    - include_vars: vault_files/master_users_list
+  roles:
+    - ntp
+    - { role: kernel,
+        kernel_vars: "{{ kernel_vars }}",
+        io_vars:
+         [ "echo never > /sys/kernel/mm/transparent_hugepage/enabled",
+           "echo 'noop' > /sys/block/xvda/queue/scheduler",
+           "echo '2' > /sys/block/xvda/queue/rq_affinity",
+           "echo '256' > /sys/block/xvda/queue/nr_requests",
+           "echo '256' > /sys/block/xvda/queue/read_ahead_kb"
+        ] 
+      }
+    - { role: rabbitmq,
+      enable_cluster: false,
+      when: env == "prod"
+    }
+    - { role: rabbitmq, rabbitmq_hostname: "dev.tradesy.com", cluster_partition_handling: "ignore", cluster_nodes: "'rabbit@dev.tradesy.com'", rabbitmq_nodename: "rabbitmq" ,
+      when: env == "dev"
+    }
+   # set etc hosts for server
+    - { role: etc_hosts,
+        the_hosts: "{{ the_hosts }}"
+      }
+  post_tasks:
+  - name: install py library
+    pip: name=httplib2 state=present
