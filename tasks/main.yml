@@ -1,69 +1,136 @@
+---
 - name: Copy GPG key
-  copy: src=rabbitmq-gpg-key dest=/tmp/rabbitmq-gpg-key 
+  copy: 
+    src: rabbitmq-gpg-key
+    dest: /tmp/rabbitmq-gpg-key
+
+- name: Make sure gpg is instaleld
+  apt:
+    package: gnupg-agent
+    state: present
+  become: yes
 
 - name: Add to apt-key
-  apt_key: file=/tmp/rabbitmq-gpg-key
+  apt_key: 
+    file: /tmp/rabbitmq-gpg-key
+  become: yes
 
 - name: Update apt cache
-  apt: update_cache=yes
+  apt: 
+    update_cache: yes
+  become: yes
 
 - name: Setup rabbitmq repository
-  apt_repository: repo='{{ item }}' state=present update_cache=yes
+  apt_repository:
+    repo: "{{ item }}"
+    state: present
+    update_cache: yes
+  become: yes
   with_items:
     - deb http://www.rabbitmq.com/debian testing main
 
 - name: Install the rabbitmq server
-  apt: package="{{ item }}" state=present
-  with_items:
-    - rabbitmq-server
- 
+  apt:
+    package: rabbitmq-server
+    state: present
+  become: yes
+
 - name: stop app
-  shell: rabbitmqctl stop_app
+  shell: "rabbitmqctl -n {{ rabbitmq_nodename }} {{ item }}"
   ignore_errors: true
-
-- name: reset
-  shell: rabbitmqctl reset
-  ignore_errors: true
-
-- name: stop
-  shell: rabbitmqctl stop
-  ignore_errors: true
+  become: yes
+  with_items:
+    - stop_app
+    - reset
+    - stop
 
 - name: Stop service
-  service: name=rabbitmq-server state=stopped
+  service:
+    name: rabbitmq-server
+    state: stopped
+  become: yes
 
 - name: kill rabbit
   shell: pkill -u rabbitmq  && rm -rf /var/lib/rabbitmq/mnesia
+  ignore_errors: true
+  become: yes
 
 - name: Init script
-  template: src=rabbitmq_init.j2 dest=/etc/init.d/rabbitmq-server group=root owner=root mode=0755
+  template:
+    src: rabbitmq_init.j2
+    dest: /etc/init.d/rabbitmq-server
+    group: root
+    owner: root
+    mode: 0755
+  become: yes
 
 - name: Update RabbitMQ conf to rename node
-  template: src=rabbitmq-env.conf.j2 dest=/etc/rabbitmq/rabbitmq-env.conf
+  template:
+    src: rabbitmq-env.conf.j2
+    dest: /etc/rabbitmq/rabbitmq-env.conf
+    group: rabbitmq
+  become: yes
 
 - name: Update RabbitMQ config
-  template: src=rabbitmq.config.j2 dest=/etc/rabbitmq/rabbitmq.config
+  template:
+    src: rabbitmq.config.j2
+    dest: /etc/rabbitmq/rabbitmq.config
+    group: rabbitmq
+  become: yes
 
-- name: Update RabbitMQ cookie on prod
-  lineinfile: regexp='.*' line="{{ prod_cookie }}" dest=/var/lib/rabbitmq/.erlang.cookie
-  when: env=='prod'
-
-- name: Update RabbitMQ cookie on env
-  lineinfile: regexp='.*' line="{{ dev_cookie }}" dest=/var/lib/rabbitmq/.erlang.cookie
-  when: env!='prod'
+- name: Update RabbitMQ cookie
+  lineinfile:
+    regexp: '.*'
+    line: "{{ rabbitmq_cookie }}"
+    dest: /var/lib/rabbitmq/.erlang.cookie
+    group: rabbitmq
+  become: yes
 
 - name: Start service and enable on boot
-  service: name=rabbitmq-server state=started enabled=true
+  service:
+    name: rabbitmq-server
+    state: started
+    enabled: true
+  become: yes
 
-- name: Setup federation
-  shell: rabbitmq-plugins enable rabbitmq_federation && rabbitmq-plugins enable rabbitmq_federation_management
+- name: Enable rabbitmq plugins
+  rabbitmq_plugin:
+    name: "{{ item }}"
+    state: enabled
+  with_items: "{{ rabbitmq_plugins }}"
+  become: yes
 
-- name: Enable shovel
-  shell: rabbitmq-plugins enable rabbitmq_shovel rabbitmq_shovel_management
+- name: Setup rabbitmq admin user
+  rabbitmq_user:
+    user: "{{ rabbitmq_user }}"
+    password: "{{ rabbitmq_password }}"
+    tags: "administrator"
+    permissions:
+      - vhost: /
+        configure_priv: .*
+        read_priv: .*
+        write_priv: .*
+    node: "{{ rabbitmq_nodename }}"
+    state: present
+  become: yes
 
-- name: Setup rabbitmq management web ui
-  shell: rabbitmq-plugins enable rabbitmq_management && rabbitmqctl add_user "{{ prod_user }}" "{{ prod_password }}" && rabbitmqctl set_user_tags tradesy administrator && rabbitmqctl set_permissions -p / tradesy ".*" ".*" ".*"
-  ignore_errors: true
+- name: Setup rabbitmq monitoring vhost
+  rabbitmq_vhost:
+    name: /monitoring
+    state: present
+    node: "{{ rabbitmq_nodename }}"
+  become: yes
 
 - name: Setup rabbitmq monitoring user
-  shell: rabbitmqctl add_vhost monitoring && rabbitmqctl add_user "{{ monitoring_user }}" "{{ haproxy_monitoring_password }}" && rabbitmqctl set_user_tags {{ monitoring_user }} monitoring && rabbitmqctl set_permissions -p monitoring {{ monitoring_user }} ".*" ".*" ".*"
+  rabbitmq_user:
+    user: "{{ rabbitmq_monitoring_user }}"
+    password: "{{ rabbitmq_monitoring_password }}"
+    tags: "monitoring"
+    permissions:
+      - vhost: /monitoring
+        configure_priv: .*
+        read_priv: .*
+        write_priv: .*
+    node: "{{ rabbitmq_nodename }}"
+    state: present
+  become: yes

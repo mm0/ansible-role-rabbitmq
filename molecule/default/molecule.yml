@@ -1,0 +1,50 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: vagrant
+  provider:
+    name: virtualbox
+lint:
+  name: yamllint
+  enabled: false
+platforms:
+  - name: instance
+    box: ubuntu/xenial64
+    groups:
+      - rabbitmq
+    memory: 512
+    cpus: 2
+    provider_options:
+      gui: false
+    instances:
+      - name: test-role-vagrant-01
+    interfaces:
+      - auto_config: true
+        network_name: private_network
+        type: dhcp
+    provision: true
+provisioner:
+  name: ansible
+  lint:
+    name: ansible-lint
+    enabled: false
+verifier:
+  name: testinfra
+  lint:
+    name: flake8
+scenario:
+  test_sequence:
+    - lint
+    - cleanup
+    - destroy
+    - dependency
+    - syntax
+    - create
+    - prepare
+    - converge
+    # - idempotence
+    - side_effect
+    - verify
+    - cleanup
+    - destroy

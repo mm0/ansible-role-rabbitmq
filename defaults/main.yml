@@ -2,15 +2,21 @@
 # RabbitMQ Ansible Variables
 rabbitmq_port: 5672
 handshake_timeout: 10000
-cookie: fakecookie
-user: user
-password: password
-monitoring_user: haproxy
-haproxy_monitoring_password: password
+rabbitmq_cookie: fakecookie
+rabbitmq_user: user
+rabbitmq_password: password
+rabbitmq_monitoring_user: haproxy
+rabbitmq_monitoring_password: password
 cluster_nodes: "'rabbit@dev.example.com'"
-rabbitmq_hostname: 'dev.example.com'
+rabbitmq_hostname: 'localhost'
 rabbitmq_nodename: 'rabbitmq'
 enable_cluster: false
 log_level: debug
-cluster_partition_handling: 'autoheal' #'pause_minority' # default recommended for 3 node AZ EC2 cluster 
-#cluster_partition_handling: 'autoheal' # default recommended for 2 node cluster
+cluster_partition_handling: 'autoheal'
+# pause_minority  default recommended for 3 node AZ EC2 cluster
+rabbitmq_plugins:
+  - rabbitmq_shovel
+  - rabbitmq_shovel_management
+  - rabbitmq_management
+  - rabbitmq_federation
+  - rabbitmq_tracing

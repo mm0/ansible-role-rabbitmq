@@ -2,17 +2,20 @@
 galaxy_info:
   author: Matt Margolin
   description: An Ansible role that installs and configures RabbitMQ
-  company: 
+  company:
   license: BSD2
   min_ansible_version: 2.0
   role_name: rabbitmq
   platforms:
-  - name: Ubuntu
-    versions:
-    - all
-  - name: Debian
-    versions:
-    - all
+    - name: Ubuntu
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - all
   galaxy_tags:
     - system
     - cloud
+dependencies:
+# - role: geerlingguy.ntp
+# - role: mm0.kernel
