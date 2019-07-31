@@ -112,6 +112,7 @@
         write_priv: .*
     node: "{{ rabbitmq_nodename }}"
     state: present
+  run_once: true
   become: yes
 
 - name: Setup rabbitmq monitoring vhost
@@ -133,4 +134,5 @@
         write_priv: .*
     node: "{{ rabbitmq_nodename }}"
     state: present
+  run_once: true
   become: yes
