@@ -1,6 +1,9 @@
 # default: on 
 # description: /etc/rabbitmq/rabbitmq-env.conf contains variable settings that override the defaults built in to the RabbitMQ startup scripts.
 RABBITMQ_CONFIG_FILE=/etc/rabbitmq/rabbitmq
-RABBITMQ_SERVER_START_ARGS="-name rabbit@{{ rabbitmq_hostname}}"
+#RABBITMQ_SERVER_START_ARGS="-name rabbit@{{ rabbitmq_hostname}}"
 RABBITMQ_NODENAME={{ rabbitmq_nodename }}
+{% if use_longname %}
+RABBITMQ_USE_LONGNAME=true
+{% endif %}
 

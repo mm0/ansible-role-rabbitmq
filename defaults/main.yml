@@ -11,6 +11,7 @@ cluster_nodes: "'rabbit@dev.example.com'"
 rabbitmq_hostname: 'localhost'
 rabbitmq_nodename: 'rabbitmq'
 enable_cluster: false
+use_longname: true
 log_level: debug
 cluster_partition_handling: 'autoheal'
 # pause_minority  default recommended for 3 node AZ EC2 cluster
