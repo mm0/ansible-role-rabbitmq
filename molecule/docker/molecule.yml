@@ -18,7 +18,10 @@ provisioner:
   name: ansible
   lint:
     name: ansible-lint
-    enabled: false
+    enabled: true
+    options:
+      x:
+        - ANSIBLE0013
 verifier:
   name: testinfra
   lint:
@@ -33,7 +36,7 @@ scenario:
     - create
     - prepare
     - converge
-    # - idempotence
+    - idempotence
     - side_effect
     - verify
     - cleanup

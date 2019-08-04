@@ -104,7 +104,7 @@
   become: yes
 
 - name: Wait for a little bit
-  pause: 
+  pause:
     seconds: 20
   when: enable_cluster
 

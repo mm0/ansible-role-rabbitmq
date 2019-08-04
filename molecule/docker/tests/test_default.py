@@ -17,6 +17,12 @@ def test_hosts_file(host):
     assert f.user == 'root'
     assert f.group == 'root'
 
+def test_config_file(host):
+    f = host.file('/etc/rabbitmq/rabbitmq.config')
+
+    assert f.exists
+    assert f.user == 'rabbitmq'
+    assert f.group == 'rabbitmq'
 
 def test_rabbitmq_server_is_installed(host):
     rabbitmq = host.package('rabbitmq-server')
