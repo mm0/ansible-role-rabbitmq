@@ -1,6 +1,6 @@
 ---
 - name: Copy GPG key
-  copy: 
+  copy:
     src: rabbitmq-gpg-key
     dest: /tmp/rabbitmq-gpg-key
 
@@ -11,13 +11,14 @@
   become: yes
 
 - name: Add to apt-key
-  apt_key: 
+  apt_key:
     file: /tmp/rabbitmq-gpg-key
   become: yes
 
 - name: Update apt cache
-  apt: 
+  apt:
     update_cache: yes
+  changed_when: False
   become: yes
 
 - name: Setup rabbitmq repository
@@ -39,6 +40,7 @@
   shell: "rabbitmqctl -n {{ rabbitmq_nodename }} {{ item }}"
   ignore_errors: true
   become: yes
+  when: reset_rabbitmq
   with_items:
     - stop_app
     - reset
@@ -48,10 +50,12 @@
   service:
     name: rabbitmq-server
     state: stopped
+  when: reset_rabbitmq
   become: yes
 
 - name: kill rabbit
   shell: pkill -u rabbitmq  && rm -rf /var/lib/rabbitmq/mnesia
+  when: reset_rabbitmq
   ignore_errors: true
   become: yes
 
@@ -69,6 +73,7 @@
     src: rabbitmq-env.conf.j2
     dest: /etc/rabbitmq/rabbitmq-env.conf
     group: rabbitmq
+    owner: rabbitmq
   become: yes
 
 - name: Update RabbitMQ config
@@ -84,6 +89,10 @@
     line: "{{ rabbitmq_cookie }}"
     dest: /var/lib/rabbitmq/.erlang.cookie
     group: rabbitmq
+    owner: rabbitmq
+    mode: 0600
+    create: yes
+  when: enable_cluster
   become: yes
 
 - name: Start service and enable on boot
@@ -91,6 +100,20 @@
     name: rabbitmq-server
     state: started
     enabled: true
+  run_once: yes
+  become: yes
+
+- name: Wait for a little bit
+  pause: 
+    seconds: 20
+  when: enable_cluster
+
+- name: Start service for the rest of the cluster
+  service:
+    name: rabbitmq-server
+    state: started
+    enabled: true
+  when: enable_cluster
   become: yes
 
 - name: Enable rabbitmq plugins
@@ -98,6 +121,7 @@
     name: "{{ item }}"
     state: enabled
   with_items: "{{ rabbitmq_plugins }}"
+  changed_when: False
   become: yes
 
 - name: Setup rabbitmq admin user
@@ -120,6 +144,7 @@
     name: /monitoring
     state: present
     node: "{{ rabbitmq_nodename }}"
+  run_once: true
   become: yes
 
 - name: Setup rabbitmq monitoring user

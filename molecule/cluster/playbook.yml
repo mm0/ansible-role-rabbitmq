@@ -1,0 +1,36 @@
+---
+- name: Converge
+  hosts: all
+  vars:
+    enable_cluster: true
+    use_longname: false
+  pre_tasks:
+    - name: "Get ip node 1"
+      local_action: "shell docker inspect --format {% raw %}'{{.NetworkSettings.Networks.rabbitmqcluster.IPAddress}}'{% endraw %} node1"
+      register: node_ip_1
+      changed_when: False
+    - name: "Get ip node 2"
+      local_action: "shell docker inspect --format {% raw %}'{{.NetworkSettings.Networks.rabbitmqcluster.IPAddress}}'{% endraw %} node2"
+      register: node_ip_2
+      changed_when: False
+    - name: "Get ip node 3"
+      local_action: "shell docker inspect --format {% raw %}'{{.NetworkSettings.Networks.rabbitmqcluster.IPAddress}}'{% endraw %} node3"
+      register: node_ip_3
+      changed_when: False
+    - name: "Set fact"
+      set_fact:
+        node_ip: "{{ node_ip_1.stdout }}"
+      when: inventory_hostname  == 'node1'
+    - name: "Set fact"
+      set_fact:
+        node_ip: "{{ node_ip_2.stdout }}"
+      when: inventory_hostname  == 'node2'
+    - name: "Set fact"
+      set_fact:
+        node_ip: "{{ node_ip_3.stdout }}"
+      when: inventory_hostname  == 'node3'
+    - name: "Set cluster_nodes"
+      set_fact:
+        cluster_nodes: "'rabbitmq@node1','rabbitmq@node2','rabbitmq@node3'"
+  roles:
+    - role: ansible-role-rabbitmq

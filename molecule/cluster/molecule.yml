@@ -1,0 +1,67 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: docker
+lint:
+  name: yamllint
+  enabled: false
+platforms:
+  - name: node1
+    hostname: node1
+    image: geerlingguy/docker-ubuntu1804-ansible:latest
+    privileged: True
+    exposed_ports:
+      - 4369/tcp
+      - 5672/tcp
+      - 25672/tcp
+    networks:
+      - name: rabbitmqcluster
+        aliases:
+          - node1
+        # etc_hosts: "{'node1': '172.20.0.2', 'node2': '172.20.0.3', 'node3': '172.20.0.4'}"
+    network_mode: bridge
+    purge_networks: true
+  - name: node2
+    hostname: node2
+    image: geerlingguy/docker-ubuntu1804-ansible:latest
+    privileged: True
+    exposed_ports:
+      - 4369/tcp
+      - 5672/tcp
+      - 25672/tcp
+        # etc_hosts: "{'node1': '172.20.0.2', 'node2': '172.20.0.3', 'node3': '172.20.0.4'}"
+    networks:
+      - name: rabbitmqcluster
+        aliases:
+          - node2
+        #ipv4_address: 172.20.0.3
+    network_mode: bridge
+    purge_networks: true
+  - name: node3
+    hostname: node3
+    image: geerlingguy/docker-ubuntu1804-ansible:latest
+    privileged: True
+    # etc_hosts: "{'node1': '172.20.0.2', 'node2': '172.20.0.3', 'node3': '172.20.0.4'}"
+    networks:
+      - name: rabbitmqcluster
+        aliases:
+          - node3
+        #ipv4_address: 172.20.0.4
+    network_mode: bridge
+    purge_networks: true
+    exposed_ports:
+      - 4369/tcp
+      - 5672/tcp
+      - 25672/tcp
+provisioner:
+  name: ansible
+  lint:
+    name: ansible-lint
+    enabled: false
+verifier:
+  name: testinfra
+  lint:
+    name: flake8
+  options:
+    s: true

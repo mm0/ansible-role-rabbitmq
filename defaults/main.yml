@@ -13,6 +13,7 @@ rabbitmq_nodename: 'rabbitmq'
 enable_cluster: false
 use_longname: true
 log_level: debug
+reset_rabbitmq: false
 cluster_partition_handling: 'autoheal'
 # pause_minority  default recommended for 3 node AZ EC2 cluster
 rabbitmq_plugins:

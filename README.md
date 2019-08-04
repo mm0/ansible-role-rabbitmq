@@ -27,6 +27,7 @@ cluster_nodes: "'rabbit@dev.example.com'"
 rabbitmq_hostname: 'dev.example.com'
 rabbitmq_nodename: 'rabbitmq'
 enable_cluster: false
+use_longname: false
 log_level: debug
 cluster_partition_handling: 'autoheal' #'pause_minority' # default recommended for 3 node AZ EC2 cluster 
 ```
@@ -40,11 +41,19 @@ Example Playbook
 ---
 
 ```yml
-- hosts: nodes
+- hosts: node
   roles:
   - { role: mm0.rabbitmq }
 ```
-
+Cluster
+```yml
+- hosts: nodes
+  vars:
+    - enable_cluster: true
+    - cluster_partition_handling: true
+    - rabbitmq_cookie: 213hiahsfkjashk
+  roles:
+  - { role: mm0.rabbitmq }
 License
 ---------------
 
