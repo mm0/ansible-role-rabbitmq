@@ -22,8 +22,8 @@ def test_config_file(host):
     f = host.file('/etc/rabbitmq/rabbitmq.config')
 
     assert f.exists
-    assert f.user == 'root'
-    assert f.group == 'root'
+    assert f.user == 'rabbitmq'
+    assert f.group == 'rabbitmq'
 
 
 def test_cookie_file(host):
