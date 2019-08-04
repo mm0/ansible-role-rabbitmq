@@ -41,13 +41,7 @@ Role Variables
 | `cluster_nodes` | `""` | This must be a string in the format "'rabbitmq@nodehostname','rabbitmq@node2hostname','rabbitmq@node3hostname'|
 | `log_level` | `debug` | Adjust verbosity |
 | `cluster_partition_handling` | `autoheal` | Set the cluster partioning handling setting of your choice |
-| `rabbitmq_plugins` |
-  - rabbitmq_shovel
-  - rabbitmq_shovel_management
-  - rabbitmq_management
-  - rabbitmq_federation
-  - rabbitmq_tracing
-  | A list of plugins to install |
+| `rabbitmq_plugins` | - rabbitmq_shovel<br/>- rabbitmq_shovel_management<br/>- rabbitmq_management<br/>- rabbitmq_federation<br/>- rabbitmq_tracing|  A list of plugins to install |
 
 
 Dependencies
