@@ -4,7 +4,7 @@ Ansible Role: RabbitMQ
 [![Build Status](https://travis-ci.org/mm0/ansible-role-rabbitmq.svg?branch=master)](https://travis-ci.org/mm0/ansible-role-rabbitmq)
 [![Galaxy](https://img.shields.io/badge/galaxy-mm0.rabbitmq-blue.svg?style=flat)](https://galaxy.ansible.com/mm0/ansible-role-rabbitmq)
 
-An Ansible role that installs and configures RabbitMQ
+An Ansible role that installs and configures RabbitMQ as a Standalone node or as a Cluster.  Simple set a few parameters and you're set.  Admin panel will be available on port 15672.  Default credentials are set below. Currently only tested for Ubuntu and uses `apt`, however, both standalone and 3 node cluster is fully tested using `molecule` via `travis-ci` using docker or vagrant. If you'd like to contribute a Redhat compatibility PR that would be great! 
 
 Requirements
 ---
@@ -57,13 +57,19 @@ Example Playbook
   roles:
   - { role: mm0.rabbitmq }
 ```
-Cluster
+# Example Cluster Playbook
+
+If you are using non-FQDN (myhostname), you must add these values + corresponding IP addresses to /etc/hosts.  
+If you are using FQDN (myhostname.domain.com), set the `use_longname` variable to `true`
+Don't forget to set the hostname on your system as a `pre_task` or separate playbook.  If your FQDN resolves to the right address and your servers are configured to resolve the correct DNS entry, then you just need to set `use_longname: true` and not worry about /etc/hosts.
+
 ```yml
 - hosts: nodes
   vars:
     - enable_cluster: true
     - cluster_partition_handling: true
     - rabbitmq_cookie: 213hiahsfkjashk
+    - cluster_nodes: 'rabbitmq@nodehostname','rabbitmq@node2hostname','rabbitmq@node3hostname'
   roles:
   - { role: mm0.rabbitmq }
 License
