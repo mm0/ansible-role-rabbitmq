@@ -17,12 +17,14 @@ def test_hosts_file(host):
     assert f.user == 'root'
     assert f.group == 'root'
 
+
 def test_config_file(host):
     f = host.file('/etc/rabbitmq/rabbitmq.config')
 
     assert f.exists
     assert f.user == 'root'
     assert f.group == 'root'
+
 
 def test_rabbitmq_server_is_installed(host):
     rabbitmq = host.package('rabbitmq-server')
@@ -44,14 +46,12 @@ def test_rabbitmq_is_listening(host):
 
 
 def test_rabbitmq_status(host):
-    rabbitmq = host.service('rabbitmq-server')
     cmd = host.run("rabbitmqctl status")
 
     assert "uptime" in cmd.stdout
 
 
 def test_rabbitmq_cluster_status(host):
-    rabbitmq = host.service('rabbitmq-server')
     cmd = host.run("rabbitmqctl cluster_status")
 
     for i in ['rabbitmq@node1']:
